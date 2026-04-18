@@ -26,6 +26,22 @@ docker compose logs -f
 - If you change Unraid behavior, update both `README.md` and `unraid/`
 - Prefer practical fixes over large refactors unless there is a clear benefit
 
+## Publishing Images
+
+The public image is `shuaturner/flash105:latest`.
+
+GitHub Actions can publish it automatically when these repository secrets are configured:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+Manual publishing is still possible for maintainers:
+
+```bash
+docker build -t shuaturner/flash105:latest .
+docker push shuaturner/flash105:latest
+```
+
 ## Bug Reports
 
 When reporting a bug, include:

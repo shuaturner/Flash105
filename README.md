@@ -49,18 +49,11 @@ docker compose up --build -d
 docker compose logs -f
 ```
 
-## Publish To Docker Hub
+## Run With Published Image
 
-The compose file already supports an image tag through `BOT_IMAGE`.
+The bot image is published as `shuaturner/flash105:latest`.
 
-Build and push:
-
-```bash
-docker build -t shuaturner/flash105:latest .
-docker push shuaturner/flash105:latest
-```
-
-Run from Docker Hub with compose:
+Run the published image with compose:
 
 ```bash
 BOT_IMAGE=shuaturner/flash105:latest docker compose up -d
@@ -100,39 +93,32 @@ Suggested Unraid appdata layout:
 
 ### Unraid Setup Steps
 
-1. Push your bot image to Docker Hub:
-
-```bash
-docker build -t shuaturner/flash105:latest .
-docker push shuaturner/flash105:latest
-```
-
-2. On Unraid, create these folders:
+1. On Unraid, create these folders:
 
 ```bash
 mkdir -p /mnt/user/appdata/discord-music-bot/bot
 mkdir -p /mnt/user/appdata/discord-music-bot/lavalink/plugins
 ```
 
-3. Copy these files to Unraid:
+2. Copy these files to Unraid:
 
 - `application.yml` -> `/mnt/user/appdata/discord-music-bot/lavalink/application.yml`
 - `unraid/bot.env.example` -> `/mnt/user/appdata/discord-music-bot/bot/.env`
 - `unraid/docker-compose.unraid.yml` -> anywhere convenient, for example `/mnt/user/appdata/discord-music-bot/docker-compose.yml`
 
-4. Edit `/mnt/user/appdata/discord-music-bot/bot/.env` and set:
+3. Edit `/mnt/user/appdata/discord-music-bot/bot/.env` and set:
 
 - `DISCORD_TOKEN`
 - optionally `DISCORD_SERVER_ID`
 
-5. In the Unraid terminal, start the stack:
+4. In the Unraid terminal, start the stack:
 
 ```bash
 cd /mnt/user/appdata/discord-music-bot
 docker compose -f docker-compose.yml up -d
 ```
 
-6. Check logs:
+5. Check logs:
 
 ```bash
 docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml logs -f
@@ -140,7 +126,7 @@ docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml logs -f
 
 ### Updating On Unraid
 
-When you publish a new bot image:
+When a new bot image is published:
 
 ```bash
 docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml pull
