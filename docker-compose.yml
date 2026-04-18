@@ -1,9 +1,11 @@
 services:
   lavalink:
-    image: ghcr.io/lavalink-devs/lavalink:4-alpine
+    image: ${LAVALINK_IMAGE:-flash105-lavalink:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.lavalink
     restart: unless-stopped
     volumes:
-      - ./application.yml:/opt/Lavalink/application.yml
       - ./plugins:/opt/Lavalink/plugins
     expose:
       - "2333"

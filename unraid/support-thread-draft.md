@@ -16,18 +16,18 @@ It supports:
 This setup uses two containers:
 
 - `shuaturner/flash105:latest`
-- `ghcr.io/lavalink-devs/lavalink:4-alpine`
+- `shuaturner/flash105-lavalink:latest`
 
 ### Requirements
 
 - a Discord bot token
 - a Lavalink container
-- `application.yml` mounted into Lavalink
 - a persistent Lavalink plugins folder
 
 ### Useful Links
 
 - Docker Hub: https://hub.docker.com/r/shuaturner/flash105
+- Lavalink image: https://hub.docker.com/r/shuaturner/flash105-lavalink
 - GitHub: https://github.com/shuaturner/Flash105
 
 ### Common Setup Notes

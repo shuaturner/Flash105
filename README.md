@@ -52,11 +52,12 @@ docker compose logs -f
 ## Run With Published Image
 
 The bot image is published as `shuaturner/flash105:latest`.
+The preconfigured Lavalink companion image is published as `shuaturner/flash105-lavalink:latest`.
 
 Run the published image with compose:
 
 ```bash
-BOT_IMAGE=shuaturner/flash105:latest docker compose up -d
+BOT_IMAGE=shuaturner/flash105:latest LAVALINK_IMAGE=shuaturner/flash105-lavalink:latest docker compose up -d
 ```
 
 ## Unraid Notes
@@ -64,15 +65,14 @@ BOT_IMAGE=shuaturner/flash105:latest docker compose up -d
 For Unraid, keep the same two-service layout:
 
 - one container from `shuaturner/flash105:latest`
-- one container from `ghcr.io/lavalink-devs/lavalink:4-alpine`
+- one container from `shuaturner/flash105-lavalink:latest`
 
 Recommended persistent paths:
 
 - map your bot `.env` file or set the environment variables directly in Unraid
-- mount `application.yml` into `/opt/Lavalink/application.yml`
 - mount a persistent plugins folder into `/opt/Lavalink/plugins`
 
-The `plugins` mount lets Lavalink keep the downloaded YouTube plugin between restarts.
+The bundled Lavalink image already includes `application.yml`, so Unraid users do not need to copy a Lavalink config file manually. The `plugins` mount lets Lavalink keep the downloaded YouTube plugin between restarts.
 
 An example Unraid-oriented compose file is included at `unraid/docker-compose.unraid.yml`.
 An example bot env file is included at `unraid/bot.env.example`.
@@ -89,7 +89,6 @@ Suggested Unraid appdata layout:
   bot/
     .env
   lavalink/
-    application.yml
     plugins/
 ```
 
@@ -104,7 +103,6 @@ mkdir -p /mnt/user/appdata/discord-music-bot/lavalink/plugins
 
 2. Copy these files to Unraid:
 
-- `application.yml` -> `/mnt/user/appdata/discord-music-bot/lavalink/application.yml`
 - `unraid/bot.env.example` -> `/mnt/user/appdata/discord-music-bot/bot/.env`
 - `unraid/docker-compose.unraid.yml` -> anywhere convenient, for example `/mnt/user/appdata/discord-music-bot/docker-compose.yml`
 

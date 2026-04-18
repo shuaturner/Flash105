@@ -14,7 +14,7 @@ Use this as the minimum checklist before trying to publish on Unraid Community A
 - Publish `unraid/templates/discord-music-bot.xml`
 - Publish `unraid/templates/lavalink.xml`
 - Reference the Docker Hub bot image: `shuaturner/flash105:latest`
-- Reference the Lavalink image: `ghcr.io/lavalink-devs/lavalink:4-alpine`
+- Reference the bundled Lavalink image: `shuaturner/flash105-lavalink:latest`
 
 ## Suggested Submission Notes
 
@@ -22,7 +22,6 @@ Use this as the minimum checklist before trying to publish on Unraid Community A
 - If installed as separate templates, both containers should be placed on the same user-defined Docker network so the hostname `lavalink` resolves.
 - The Lavalink container should keep the container name `lavalink`, or the user must change `LAVALINK_HOST`.
 - The Lavalink template requires:
-  - `/mnt/user/appdata/discord-music-bot/lavalink/application.yml`
   - `/mnt/user/appdata/discord-music-bot/lavalink/plugins`
 
 ## Helpful Links

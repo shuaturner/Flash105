@@ -1,10 +1,9 @@
 services:
   lavalink:
-    image: ghcr.io/lavalink-devs/lavalink:4-alpine
+    image: shuaturner/flash105-lavalink:latest
     container_name: lavalink
     restart: unless-stopped
     volumes:
-      - /mnt/user/appdata/discord-music-bot/lavalink/application.yml:/opt/Lavalink/application.yml
       - /mnt/user/appdata/discord-music-bot/lavalink/plugins:/opt/Lavalink/plugins
 
   discord-music-bot:

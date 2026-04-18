@@ -44,8 +44,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract Docker metadata
-        id: meta
+      - name: Extract bot Docker metadata
+        id: bot-meta
         uses: docker/metadata-action@v6
         with:
           images: shuaturner/flash105
@@ -54,10 +54,30 @@ jobs:
             type=ref,event=tag
             type=sha
 
-      - name: Build and push
+      - name: Extract Lavalink Docker metadata
+        id: lavalink-meta
+        uses: docker/metadata-action@v6
+        with:
+          images: shuaturner/flash105-lavalink
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=tag
+            type=sha
+
+      - name: Build and push bot image
         uses: docker/build-push-action@v7
         with:
           context: .
+          file: Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.bot-meta.outputs.tags }}
+          labels: ${{ steps.bot-meta.outputs.labels }}
+
+      - name: Build and push Lavalink image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.lavalink
+          push: true
+          tags: ${{ steps.lavalink-meta.outputs.tags }}
+          labels: ${{ steps.lavalink-meta.outputs.labels }}
