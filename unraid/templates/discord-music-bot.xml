@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Discord Music Bot</Name>
+  <Repository>shuaturner/flash105:latest</Repository>
+  <Registry>https://hub.docker.com/r/shuaturner/flash105</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://forums.unraid.net/</Support>
+  <Project>https://hub.docker.com/r/shuaturner/flash105</Project>
+  <Overview>A Discord music bot powered by discord.py and Lavalink. This container requires a separate Lavalink container reachable at the hostname lavalink.</Overview>
+  <Category>Network:Other MediaApp:Music</Category>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/discord.svg</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>0</DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Description>A Discord music bot that plays YouTube requests through a Lavalink backend. Install the matching Lavalink template as well, and keep its container name as lavalink or set LAVALINK_HOST to match.</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish/>
+  </Networking>
+  <Data/>
+  <Environment>
+    <Variable>
+      <Name>Discord Bot Token</Name>
+      <Value></Value>
+      <Mode/>
+      <Type>Variable</Type>
+      <Display>always</Display>
+      <Required>true</Required>
+      <Mask>true</Mask>
+      <Target>DISCORD_TOKEN</Target>
+    </Variable>
+    <Variable>
+      <Name>Discord Server ID</Name>
+      <Value></Value>
+      <Mode/>
+      <Type>Variable</Type>
+      <Display>always</Display>
+      <Required>false</Required>
+      <Mask>false</Mask>
+      <Target>DISCORD_SERVER_ID</Target>
+    </Variable>
+    <Variable>
+      <Name>Lavalink Host</Name>
+      <Value>lavalink</Value>
+      <Mode/>
+      <Type>Variable</Type>
+      <Display>advanced</Display>
+      <Required>true</Required>
+      <Mask>false</Mask>
+      <Target>LAVALINK_HOST</Target>
+    </Variable>
+    <Variable>
+      <Name>Lavalink Port</Name>
+      <Value>2333</Value>
+      <Mode/>
+      <Type>Variable</Type>
+      <Display>advanced</Display>
+      <Required>true</Required>
+      <Mask>false</Mask>
+      <Target>LAVALINK_PORT</Target>
+    </Variable>
+    <Variable>
+      <Name>Lavalink Password</Name>
+      <Value>youshallnotpass</Value>
+      <Mode/>
+      <Type>Variable</Type>
+      <Display>advanced</Display>
+      <Required>true</Required>
+      <Mask>false</Mask>
+      <Target>LAVALINK_PASSWORD</Target>
+    </Variable>
+    <Variable>
+      <Name>Lavalink Secured</Name>
+      <Value>false</Value>
+      <Mode/>
+      <Type>Variable</Type>
+      <Display>advanced</Display>
+      <Required>true</Required>
+      <Mask>false</Mask>
+      <Target>LAVALINK_SECURED</Target>
+    </Variable>
+    <Variable>
+      <Name>Log Level</Name>
+      <Value>INFO</Value>
+      <Mode/>
+      <Type>Variable</Type>
+      <Display>advanced</Display>
+      <Required>false</Required>
+      <Mask>false</Mask>
+      <Target>LOG_LEVEL</Target>
+    </Variable>
+  </Environment>
+  <Labels/>
+  <Config Name="Discord Bot Token" Target="DISCORD_TOKEN" Default="" Mode="" Description="Your Discord bot token." Type="Variable" Display="always" Required="true" Mask="true"> </Config>
+  <Config Name="Discord Server ID" Target="DISCORD_SERVER_ID" Default="" Mode="" Description="Optional. Speeds up slash-command sync for one server." Type="Variable" Display="always" Required="false" Mask="false"> </Config>
+  <Config Name="Lavalink Host" Target="LAVALINK_HOST" Default="lavalink" Mode="" Description="Hostname of the Lavalink container." Type="Variable" Display="advanced" Required="true" Mask="false"> </Config>
+  <Config Name="Lavalink Port" Target="LAVALINK_PORT" Default="2333" Mode="" Description="Port used by Lavalink." Type="Variable" Display="advanced" Required="true" Mask="false"> </Config>
+  <Config Name="Lavalink Password" Target="LAVALINK_PASSWORD" Default="youshallnotpass" Mode="" Description="Must match the Lavalink template password." Type="Variable" Display="advanced" Required="true" Mask="false"> </Config>
+  <Config Name="Lavalink Secured" Target="LAVALINK_SECURED" Default="false" Mode="" Description="Use true only if Lavalink is configured with TLS." Type="Variable" Display="advanced" Required="true" Mask="false"> </Config>
+  <Config Name="Log Level" Target="LOG_LEVEL" Default="INFO" Mode="" Description="Logging verbosity for the bot." Type="Variable" Display="advanced" Required="false" Mask="false"> </Config>
+</Container>

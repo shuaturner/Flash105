@@ -1,0 +1,18 @@
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4-alpine
+    restart: unless-stopped
+    volumes:
+      - ./application.yml:/opt/Lavalink/application.yml
+      - ./plugins:/opt/Lavalink/plugins
+    expose:
+      - "2333"
+
+  discord-music-bot:
+    image: ${BOT_IMAGE:-discord-music-bot:latest}
+    build: .
+    env_file:
+      - .env
+    depends_on:
+      - lavalink
+    restart: unless-stopped

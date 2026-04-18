@@ -1,0 +1,17 @@
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4-alpine
+    container_name: lavalink
+    restart: unless-stopped
+    volumes:
+      - /mnt/user/appdata/discord-music-bot/lavalink/application.yml:/opt/Lavalink/application.yml
+      - /mnt/user/appdata/discord-music-bot/lavalink/plugins:/opt/Lavalink/plugins
+
+  discord-music-bot:
+    image: shuaturner/flash105:latest
+    container_name: discord-music-bot
+    restart: unless-stopped
+    depends_on:
+      - lavalink
+    env_file:
+      - /mnt/user/appdata/discord-music-bot/bot/.env
