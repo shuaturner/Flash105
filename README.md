@@ -56,21 +56,21 @@ The compose file already supports an image tag through `BOT_IMAGE`.
 Build and push:
 
 ```bash
-docker build -t yourdockerhubuser/discord-music-bot:latest .
-docker push yourdockerhubuser/discord-music-bot:latest
+docker build -t shuaturner/flash105:latest .
+docker push shuaturner/flash105:latest
 ```
 
 Run from Docker Hub with compose:
 
 ```bash
-BOT_IMAGE=yourdockerhubuser/discord-music-bot:latest docker compose up -d
+BOT_IMAGE=shuaturner/flash105:latest docker compose up -d
 ```
 
 ## Unraid Notes
 
 For Unraid, keep the same two-service layout:
 
-- one container from `yourdockerhubuser/discord-music-bot:latest`
+- one container from `shuaturner/flash105:latest`
 - one container from `ghcr.io/lavalink-devs/lavalink:4-alpine`
 
 Recommended persistent paths:
@@ -85,6 +85,7 @@ An example Unraid-oriented compose file is included at `unraid/docker-compose.un
 An example bot env file is included at `unraid/bot.env.example`.
 Starter CA template XML files are included at `unraid/templates/`.
 There is also a short CA publishing checklist at `unraid/ca-submission-checklist.md`.
+There is a starter Unraid support-thread post at `unraid/support-thread-draft.md`.
 
 Suggested Unraid appdata layout:
 
@@ -102,8 +103,8 @@ Suggested Unraid appdata layout:
 1. Push your bot image to Docker Hub:
 
 ```bash
-docker build -t yourdockerhubuser/discord-music-bot:latest .
-docker push yourdockerhubuser/discord-music-bot:latest
+docker build -t shuaturner/flash105:latest .
+docker push shuaturner/flash105:latest
 ```
 
 2. On Unraid, create these folders:
@@ -145,6 +146,17 @@ When you publish a new bot image:
 docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml pull
 docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml up -d
 ```
+
+## GitHub Automation
+
+The repository includes a GitHub Actions workflow at `.github/workflows/docker-publish.yml`.
+
+To use it, add these repository secrets:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+After that, pushes to `main` and version tags can automatically publish updated Docker images.
 
 ## Project Notes
 
