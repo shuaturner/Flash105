@@ -30,10 +30,10 @@ docker compose logs -f
 
 The public image is `shuaturner/flash105:latest`.
 
-GitHub Actions can publish it automatically when these repository secrets are configured:
+GitHub Actions can publish it automatically when these repository secrets are configured under `Settings` > `Secrets and variables` > `Actions` > `Repository secrets`:
 
 - `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
+- `DOCKERHUB_TOKEN` - a Docker Hub access token with permission to publish `shuaturner/flash105`
 
 Manual publishing is still possible for maintainers:
 

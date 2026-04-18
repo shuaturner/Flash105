@@ -137,10 +137,10 @@ docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml up -d
 
 The repository includes a GitHub Actions workflow at `.github/workflows/docker-publish.yml`.
 
-To use it, add these repository secrets:
+To use it, add these repository secrets in GitHub under `Settings` > `Secrets and variables` > `Actions` > `Repository secrets`:
 
 - `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
+- `DOCKERHUB_TOKEN` - a Docker Hub access token with permission to publish `shuaturner/flash105`
 
 After that, pushes to `main` and version tags can automatically publish updated Docker images.
 
