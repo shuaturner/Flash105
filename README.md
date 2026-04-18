@@ -80,6 +80,8 @@ Starter CA template XML files are included at `unraid/templates/`.
 There is also a short CA publishing checklist at `unraid/ca-submission-checklist.md`.
 There is a starter Unraid support-thread post at `unraid/support-thread-draft.md`.
 
+If you install the bot and Lavalink as separate Unraid templates instead of using Compose, put both containers on the same user-defined Docker network. The bot expects to reach Lavalink at the hostname `lavalink`.
+
 Suggested Unraid appdata layout:
 
 ```text
