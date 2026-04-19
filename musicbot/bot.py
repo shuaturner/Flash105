@@ -6,6 +6,7 @@ import logging
 import discord
 import lavalink
 from discord import app_commands
+from discord.ui import Button, View
 from lavalink.errors import ClientError
 
 from musicbot.config import Settings
@@ -294,6 +295,140 @@ def describe_requester(guild: discord.Guild | None, requester_id: int) -> str:
     return member.display_name if member else str(requester_id)
 
 
+def get_player_from_interaction(interaction: discord.Interaction) -> lavalink.DefaultPlayer | None:
+    bot = interaction.client
+    if not isinstance(bot, MusicBot):
+        return None
+
+    return get_existing_player(bot, interaction.guild_id)
+
+
+def create_track_embed(
+    *,
+    title: str,
+    track: lavalink.AudioTrack,
+    requester: discord.Member | discord.User,
+    status: str,
+) -> discord.Embed:
+    embed = discord.Embed(
+        title=title,
+        description=f"**{track.title}**",
+        color=discord.Color.from_rgb(255, 184, 77),
+        url=track.uri,
+    )
+    embed.add_field(name="Artist", value=track.author or "Unknown", inline=True)
+    embed.add_field(name="Length", value=format_duration(track.duration), inline=True)
+    embed.add_field(name="Status", value=status, inline=True)
+    embed.set_footer(text=f"Requested by {requester.display_name}")
+
+    artwork = getattr(track, "artwork_url", None)
+    if artwork:
+        embed.set_thumbnail(url=artwork)
+
+    return embed
+
+
+def create_queue_embed(player: lavalink.DefaultPlayer, guild: discord.Guild | None) -> discord.Embed:
+    embed = discord.Embed(
+        title="Flash105 Queue",
+        color=discord.Color.from_rgb(255, 184, 77),
+    )
+
+    if player.current is not None:
+        requester = describe_requester(guild, getattr(player.current, "requester", 0))
+        embed.add_field(
+            name="Now Playing",
+            value=f"**{player.current.title}**\n{player.current.author} ({requester})",
+            inline=False,
+        )
+
+    if player.queue:
+        upcoming = []
+        for index, track in enumerate(player.queue[:10], start=1):
+            requester = describe_requester(guild, getattr(track, "requester", 0))
+            upcoming.append(f"{index}. **{track.title}** - {track.author} ({requester})")
+        embed.add_field(name="Up Next", value="\n".join(upcoming), inline=False)
+    else:
+        embed.add_field(name="Up Next", value="Nothing queued.", inline=False)
+
+    return embed
+
+
+class PlayerControls(View):
+    def __init__(self) -> None:
+        super().__init__(timeout=900)
+
+    async def _get_player(self, interaction: discord.Interaction) -> lavalink.DefaultPlayer | None:
+        player = get_player_from_interaction(interaction)
+        if player is None:
+            await interaction.response.send_message("The bot is not connected to voice.", ephemeral=True)
+            return None
+        return player
+
+    @discord.ui.button(label="Pause", style=discord.ButtonStyle.secondary, custom_id="flash105:pause")
+    async def pause(self, interaction: discord.Interaction, _: Button) -> None:
+        player = await self._get_player(interaction)
+        if player is None:
+            return
+
+        if not player.is_playing:
+            await interaction.response.send_message("Nothing is currently playing.", ephemeral=True)
+            return
+
+        await player.set_pause(True)
+        await interaction.response.send_message("Paused.", ephemeral=True)
+
+    @discord.ui.button(label="Resume", style=discord.ButtonStyle.success, custom_id="flash105:resume")
+    async def resume(self, interaction: discord.Interaction, _: Button) -> None:
+        player = await self._get_player(interaction)
+        if player is None:
+            return
+
+        if not player.paused:
+            await interaction.response.send_message("Playback is not paused.", ephemeral=True)
+            return
+
+        await player.set_pause(False)
+        await interaction.response.send_message("Resumed.", ephemeral=True)
+
+    @discord.ui.button(label="Skip", style=discord.ButtonStyle.primary, custom_id="flash105:skip")
+    async def skip(self, interaction: discord.Interaction, _: Button) -> None:
+        player = await self._get_player(interaction)
+        if player is None:
+            return
+
+        if not player.is_playing:
+            await interaction.response.send_message("Nothing is currently playing.", ephemeral=True)
+            return
+
+        await player.skip()
+        await interaction.response.send_message("Skipped.", ephemeral=True)
+
+    @discord.ui.button(label="Queue", style=discord.ButtonStyle.secondary, custom_id="flash105:queue")
+    async def queue(self, interaction: discord.Interaction, _: Button) -> None:
+        player = await self._get_player(interaction)
+        if player is None:
+            return
+
+        if player.current is None and not player.queue:
+            await interaction.response.send_message("The queue is empty.", ephemeral=True)
+            return
+
+        await interaction.response.send_message(embed=create_queue_embed(player, interaction.guild), ephemeral=True)
+
+    @discord.ui.button(label="Leave", style=discord.ButtonStyle.danger, custom_id="flash105:leave")
+    async def leave(self, interaction: discord.Interaction, _: Button) -> None:
+        player = await self._get_player(interaction)
+        if player is None:
+            return
+
+        player.queue.clear()
+        await player.stop()
+        if interaction.guild is not None and interaction.guild.voice_client is not None:
+            await interaction.guild.voice_client.disconnect(force=True)
+        await interaction.response.send_message("Disconnected.", ephemeral=True)
+
+
 @app_commands.command(name="play", description="Queue a song from YouTube via Lavalink.")
 @app_commands.describe(query="A song title, YouTube URL, or playlist URL")
 @guild_only()
@@ -317,9 +452,13 @@ async def play_command(interaction: discord.Interaction, query: str) -> None:
     if len(tracks) == 1:
         track = tracks[0]
         verb = "Now playing" if started_now else "Queued"
-        await interaction.followup.send(
-            f"{verb}: **{track.title}**\nArtist: `{track.author}`\nLength: `{format_duration(track.duration)}`"
+        embed = create_track_embed(
+            title=f"Flash105 - {verb}",
+            track=track,
+            requester=interaction.user,
+            status="Playing now" if started_now else "Added to queue",
         )
+        await interaction.followup.send(embed=embed, view=PlayerControls())
         return
 
     playlist_name = load_result.playlist_info.name or "playlist"
@@ -455,12 +594,23 @@ async def now_playing_command(interaction: discord.Interaction) -> None:
 
     track = player.current
     requester = describe_requester(interaction.guild, getattr(track, "requester", 0))
+    embed = discord.Embed(
+        title="Flash105 - Now Playing",
+        description=f"**{track.title}**",
+        color=discord.Color.from_rgb(255, 184, 77),
+        url=track.uri,
+    )
+    embed.add_field(name="Artist", value=track.author or "Unknown", inline=True)
+    embed.add_field(name="Length", value=format_duration(track.duration), inline=True)
+    embed.add_field(name="Requested by", value=requester, inline=True)
+
+    artwork = getattr(track, "artwork_url", None)
+    if artwork:
+        embed.set_thumbnail(url=artwork)
+
     await interaction.response.send_message(
-        f"Now playing: **{track.title}**\n"
-        f"Artist: `{track.author}`\n"
-        f"Length: `{format_duration(track.duration)}`\n"
-        f"Requested by: `{requester}`\n"
-        f"Open: {track.uri}",
+        embed=embed,
+        view=PlayerControls(),
         ephemeral=True,
     )
 
