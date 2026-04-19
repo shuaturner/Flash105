@@ -496,7 +496,13 @@ class PlayerControls(View):
         await interaction.response.send_message("Disconnected.", ephemeral=True)
 
 
-async def queue_track_from_interaction(interaction: discord.Interaction, query: str, *, command_label: str) -> None:
+async def queue_track_from_interaction(
+    interaction: discord.Interaction,
+    query: str,
+    *,
+    command_label: str,
+    special_message: str | None = None,
+) -> None:
     await interaction.response.defer(thinking=True)
     bot = interaction.client
     if not isinstance(bot, MusicBot):
@@ -523,14 +529,20 @@ async def queue_track_from_interaction(interaction: discord.Interaction, query: 
             status="Playing now" if started_now else "Added to queue",
         )
         embed.set_author(name=command_label)
+        if special_message:
+            embed.add_field(name="Message", value=special_message, inline=False)
         message = await interaction.followup.send(embed=embed, view=PlayerControls(), wait=True)
         if interaction.guild_id is not None:
             bot.track_playback_message(interaction.guild_id, message)
         return
 
     playlist_name = load_result.playlist_info.name or "playlist"
+    playlist_message = f"{command_label}: queued `{len(tracks)}` tracks from **{playlist_name}**."
+    if special_message:
+        playlist_message = f"{special_message}\n{playlist_message}"
+
     message = await interaction.followup.send(
-        f"{command_label}: queued `{len(tracks)}` tracks from **{playlist_name}**.",
+        playlist_message,
         view=PlayerControls(),
         wait=True,
     )
@@ -549,7 +561,12 @@ async def play_command(interaction: discord.Interaction, query: str) -> None:
 @app_commands.describe(query="A song title, YouTube URL, or playlist URL")
 @guild_only()
 async def sendgps_command(interaction: discord.Interaction, query: str) -> None:
-    await queue_track_from_interaction(interaction, query, command_label="/sendgps")
+    await queue_track_from_interaction(
+        interaction,
+        query,
+        command_label="/sendgps",
+        special_message="Music just for Andy",
+    )
 
 
 @app_commands.command(name="skip", description="Skip the currently playing track.")
