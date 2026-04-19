@@ -12,6 +12,7 @@ It supports:
 ## Commands
 
 - `/play query:<song or url>`
+- `/sendgps query:<song or url>` on the beta UI branch
 - `/skip`
 - `/pause`
 - `/resume`
@@ -20,7 +21,7 @@ It supports:
 - `/queue`
 - `/nowplaying`
 
-On the beta UI branch, `/play` and `/nowplaying` also show Discord button controls for pause, resume, skip, queue, and leave.
+On the beta UI branch, `/play`, `/sendgps`, and `/nowplaying` also show Discord button controls for pause, resume, skip, queue, and leave. Public playback messages are cleaned up when playback is stopped, the bot leaves, or the voice channel becomes empty.
 
 ## Discord Setup
 

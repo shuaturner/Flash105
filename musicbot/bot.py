@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections import defaultdict
 
 import discord
 import lavalink
@@ -99,7 +100,9 @@ class MusicBot(discord.Client):
         self.tree = app_commands.CommandTree(self)
         self.lavalink: lavalink.Client | None = None
         self.node_ready = asyncio.Event()
+        self.playback_messages: dict[int, list[discord.Message | discord.WebhookMessage]] = defaultdict(list)
         self.tree.add_command(play_command)
+        self.tree.add_command(sendgps_command)
         self.tree.add_command(skip_command)
         self.tree.add_command(pause_command)
         self.tree.add_command(resume_command)
@@ -168,6 +171,67 @@ class MusicBot(discord.Client):
             await event.player.destroy()
         except Exception:
             LOGGER.exception("Failed to destroy Lavalink player for guild %s", event.player.guild_id)
+
+        await self.cleanup_playback_messages(event.player.guild_id)
+
+    async def on_voice_state_update(
+        self,
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
+    ) -> None:
+        if member.bot or before.channel is None or before.channel == after.channel:
+            return
+
+        await asyncio.sleep(1)
+        voice_client = before.channel.guild.voice_client
+        if voice_client is None or voice_client.channel != before.channel:
+            return
+
+        has_listeners = any(not channel_member.bot for channel_member in before.channel.members)
+        if has_listeners:
+            return
+
+        LOGGER.info(
+            "Cleaning up guild %s because voice channel %s is empty",
+            before.channel.guild.id,
+            before.channel.id,
+        )
+        await self.cleanup_empty_voice_session(before.channel.guild)
+
+    def track_playback_message(self, guild_id: int, message: discord.Message | discord.WebhookMessage) -> None:
+        messages = self.playback_messages[guild_id]
+        messages.append(message)
+        del messages[:-25]
+
+    async def cleanup_playback_messages(self, guild_id: int) -> None:
+        messages = self.playback_messages.pop(guild_id, [])
+        for message in messages:
+            try:
+                await message.delete()
+            except discord.NotFound:
+                continue
+            except discord.Forbidden:
+                LOGGER.warning("Missing permission to delete playback message in guild %s", guild_id)
+            except discord.DiscordException:
+                LOGGER.exception("Failed to delete playback message in guild %s", guild_id)
+
+    async def cleanup_empty_voice_session(self, guild: discord.Guild) -> None:
+        player = get_existing_player(self, guild.id)
+        if player is not None:
+            player.queue.clear()
+            try:
+                await player.stop()
+            except Exception:
+                LOGGER.exception("Failed to stop player during empty-channel cleanup for guild %s", guild.id)
+
+        if guild.voice_client is not None:
+            try:
+                await guild.voice_client.disconnect(force=True)
+            except discord.DiscordException:
+                LOGGER.exception("Failed to disconnect after empty-channel cleanup for guild %s", guild.id)
+
+        await self.cleanup_playback_messages(guild.id)
 
     async def close(self) -> None:
         if self.lavalink is not None:
@@ -426,13 +490,13 @@ class PlayerControls(View):
         await player.stop()
         if interaction.guild is not None and interaction.guild.voice_client is not None:
             await interaction.guild.voice_client.disconnect(force=True)
+        bot = interaction.client
+        if isinstance(bot, MusicBot) and interaction.guild_id is not None:
+            await bot.cleanup_playback_messages(interaction.guild_id)
         await interaction.response.send_message("Disconnected.", ephemeral=True)
 
 
-@app_commands.command(name="play", description="Queue a song from YouTube via Lavalink.")
-@app_commands.describe(query="A song title, YouTube URL, or playlist URL")
-@guild_only()
-async def play_command(interaction: discord.Interaction, query: str) -> None:
+async def queue_track_from_interaction(interaction: discord.Interaction, query: str, *, command_label: str) -> None:
     await interaction.response.defer(thinking=True)
     bot = interaction.client
     if not isinstance(bot, MusicBot):
@@ -458,11 +522,34 @@ async def play_command(interaction: discord.Interaction, query: str) -> None:
             requester=interaction.user,
             status="Playing now" if started_now else "Added to queue",
         )
-        await interaction.followup.send(embed=embed, view=PlayerControls())
+        embed.set_author(name=command_label)
+        message = await interaction.followup.send(embed=embed, view=PlayerControls(), wait=True)
+        if interaction.guild_id is not None:
+            bot.track_playback_message(interaction.guild_id, message)
         return
 
     playlist_name = load_result.playlist_info.name or "playlist"
-    await interaction.followup.send(f"Queued `{len(tracks)}` tracks from **{playlist_name}**.")
+    message = await interaction.followup.send(
+        f"{command_label}: queued `{len(tracks)}` tracks from **{playlist_name}**.",
+        view=PlayerControls(),
+        wait=True,
+    )
+    if interaction.guild_id is not None:
+        bot.track_playback_message(interaction.guild_id, message)
+
+
+@app_commands.command(name="play", description="Queue a song from YouTube via Lavalink.")
+@app_commands.describe(query="A song title, YouTube URL, or playlist URL")
+@guild_only()
+async def play_command(interaction: discord.Interaction, query: str) -> None:
+    await queue_track_from_interaction(interaction, query, command_label="/play")
+
+
+@app_commands.command(name="sendgps", description="Queue a song through the Flash105 beta control panel.")
+@app_commands.describe(query="A song title, YouTube URL, or playlist URL")
+@guild_only()
+async def sendgps_command(interaction: discord.Interaction, query: str) -> None:
+    await queue_track_from_interaction(interaction, query, command_label="/sendgps")
 
 
 @app_commands.command(name="skip", description="Skip the currently playing track.")
@@ -531,6 +618,7 @@ async def stop_command(interaction: discord.Interaction) -> None:
 
     player.queue.clear()
     await player.stop()
+    await bot.cleanup_playback_messages(interaction.guild_id)
     await interaction.followup.send("Stopped playback and cleared the queue.", ephemeral=True)
 
 
@@ -551,6 +639,7 @@ async def leave_command(interaction: discord.Interaction) -> None:
     await player.stop()
     if interaction.guild.voice_client is not None:
         await interaction.guild.voice_client.disconnect(force=True)
+    await bot.cleanup_playback_messages(interaction.guild_id)
     await interaction.followup.send("Disconnected.", ephemeral=True)
 
 
@@ -616,6 +705,7 @@ async def now_playing_command(interaction: discord.Interaction) -> None:
 
 
 @play_command.error
+@sendgps_command.error
 @skip_command.error
 @pause_command.error
 @resume_command.error
