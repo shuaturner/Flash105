@@ -65,72 +65,21 @@ BOT_IMAGE=shuaturner/flash105:latest LAVALINK_IMAGE=shuaturner/flash105-lavalink
 
 ## Unraid Notes
 
-For Unraid, keep the same two-service layout:
+For Unraid, use the included templates from `unraid/templates/`:
 
-- one container from `shuaturner/flash105:latest`
-- one container from `shuaturner/flash105-lavalink:latest`
+- `discord-music-bot.xml` for `shuaturner/flash105:latest`
+- `lavalink.xml` for `shuaturner/flash105-lavalink:latest`
 
-Recommended persistent paths:
+Install the Lavalink container first, then install the bot container. Put both containers on the same Docker network so the bot can reach Lavalink at the hostname `lavalink`.
 
-- map your bot `.env` file or set the environment variables directly in Unraid
+In the bot template, set:
+
+- `DISCORD_TOKEN`
+- `DISCORD_SERVER_ID`, optional but recommended for faster slash-command sync
 
 The bundled Lavalink image already includes `application.yml` and the YouTube plugin jar, so Unraid users do not need to copy a Lavalink config file or maintain a writable plugin folder manually.
 
-An example Unraid-oriented compose file is included at `unraid/docker-compose.unraid.yml`.
-An example bot env file is included at `unraid/bot.env.example`.
-Starter CA template XML files are included at `unraid/templates/`.
-There is also a short CA publishing checklist at `unraid/ca-submission-checklist.md`.
-There is a starter Unraid support-thread post at `unraid/support-thread-draft.md`.
-
-If you install the bot and Lavalink as separate Unraid templates instead of using Compose, put both containers on the same user-defined Docker network. The bot expects to reach Lavalink at the hostname `lavalink`.
-
-Suggested Unraid appdata layout:
-
-```text
-/mnt/user/appdata/discord-music-bot/
-  bot/
-    .env
-```
-
-### Unraid Setup Steps
-
-1. On Unraid, create these folders:
-
-```bash
-mkdir -p /mnt/user/appdata/discord-music-bot/bot
-```
-
-2. Copy these files to Unraid:
-
-- `unraid/bot.env.example` -> `/mnt/user/appdata/discord-music-bot/bot/.env`
-- `unraid/docker-compose.unraid.yml` -> anywhere convenient, for example `/mnt/user/appdata/discord-music-bot/docker-compose.yml`
-
-3. Edit `/mnt/user/appdata/discord-music-bot/bot/.env` and set:
-
-- `DISCORD_TOKEN`
-- optionally `DISCORD_SERVER_ID`
-
-4. In the Unraid terminal, start the stack:
-
-```bash
-cd /mnt/user/appdata/discord-music-bot
-docker compose -f docker-compose.yml up -d
-```
-
-5. Check logs:
-
-```bash
-docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml logs -f
-```
-
-### Updating On Unraid
-
-When a new bot image is published:
-
-```bash
-docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml pull
-docker compose -f /mnt/user/appdata/discord-music-bot/docker-compose.yml up -d
-```
+Extra Unraid publishing materials are included in `unraid/ca-submission-checklist.md` and `unraid/support-thread-draft.md`.
 
 ## GitHub Automation
 
