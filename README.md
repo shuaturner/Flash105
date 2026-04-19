@@ -20,6 +20,8 @@ It supports:
 - `/queue`
 - `/nowplaying`
 
+On the beta UI branch, `/play` and `/nowplaying` also show Discord button controls for pause, resume, skip, queue, and leave.
+
 ## Discord Setup
 
 In the Discord developer portal:
