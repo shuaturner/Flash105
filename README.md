@@ -21,7 +21,7 @@ It supports:
 - `/queue`
 - `/nowplaying`
 
-On the beta UI branch, `/play` and `/nowplaying` also show Discord button controls for pause, resume, skip, queue, and leave.
+`/play`, `/sendgps`, and `/nowplaying` show Discord button controls for pause, resume, skip, queue, and leave. Public playback messages are cleaned up when playback is stopped, the bot leaves, or the voice channel becomes empty.
 
 ## Discord Setup
 
