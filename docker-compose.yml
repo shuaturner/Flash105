@@ -5,8 +5,6 @@ services:
       context: .
       dockerfile: Dockerfile.lavalink
     restart: unless-stopped
-    volumes:
-      - ./plugins:/opt/Lavalink/plugins
     expose:
       - "2333"
 

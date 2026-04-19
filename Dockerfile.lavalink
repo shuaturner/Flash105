@@ -1,3 +1,12 @@
 FROM ghcr.io/lavalink-devs/lavalink:4-alpine
 
-COPY application.yml /opt/Lavalink/application.yml
+USER root
+
+RUN mkdir -p /opt/Lavalink/plugins \
+    && chown -R lavalink:nogroup /opt/Lavalink/plugins
+
+ADD --chown=lavalink:nogroup https://maven.lavalink.dev/releases/dev/lavalink/youtube/youtube-plugin/1.18.0/youtube-plugin-1.18.0.jar /opt/Lavalink/plugins/youtube-plugin-1.18.0.jar
+
+COPY --chown=lavalink:nogroup application.yml /opt/Lavalink/application.yml
+
+USER lavalink

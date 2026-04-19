@@ -70,9 +70,8 @@ For Unraid, keep the same two-service layout:
 Recommended persistent paths:
 
 - map your bot `.env` file or set the environment variables directly in Unraid
-- mount a persistent plugins folder into `/opt/Lavalink/plugins`
 
-The bundled Lavalink image already includes `application.yml`, so Unraid users do not need to copy a Lavalink config file manually. The `plugins` mount lets Lavalink keep the downloaded YouTube plugin between restarts.
+The bundled Lavalink image already includes `application.yml` and the YouTube plugin jar, so Unraid users do not need to copy a Lavalink config file or maintain a writable plugin folder manually.
 
 An example Unraid-oriented compose file is included at `unraid/docker-compose.unraid.yml`.
 An example bot env file is included at `unraid/bot.env.example`.
@@ -88,8 +87,6 @@ Suggested Unraid appdata layout:
 /mnt/user/appdata/discord-music-bot/
   bot/
     .env
-  lavalink/
-    plugins/
 ```
 
 ### Unraid Setup Steps
@@ -98,7 +95,6 @@ Suggested Unraid appdata layout:
 
 ```bash
 mkdir -p /mnt/user/appdata/discord-music-bot/bot
-mkdir -p /mnt/user/appdata/discord-music-bot/lavalink/plugins
 ```
 
 2. Copy these files to Unraid:

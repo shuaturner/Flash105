@@ -21,8 +21,7 @@ Use this as the minimum checklist before trying to publish on Unraid Community A
 - The bot template depends on a Lavalink container.
 - If installed as separate templates, both containers should be placed on the same user-defined Docker network so the hostname `lavalink` resolves.
 - The Lavalink container should keep the container name `lavalink`, or the user must change `LAVALINK_HOST`.
-- The Lavalink template requires:
-  - `/mnt/user/appdata/discord-music-bot/lavalink/plugins`
+- The bundled Lavalink image includes `application.yml` and the YouTube plugin jar, so the template does not need appdata mounts.
 
 ## Helpful Links
 

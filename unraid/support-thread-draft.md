@@ -22,7 +22,6 @@ This setup uses two containers:
 
 - a Discord bot token
 - a Lavalink container
-- a persistent Lavalink plugins folder
 
 ### Useful Links
 
@@ -35,7 +34,7 @@ This setup uses two containers:
 - The bot container expects the Lavalink hostname to be `lavalink` by default.
 - If you install the containers separately, put both containers on the same user-defined Docker network.
 - If you rename the Lavalink container, set `LAVALINK_HOST` to match.
-- The Lavalink plugins folder should be persistent so the YouTube plugin survives restarts.
+- The bundled Lavalink image includes the config and YouTube plugin jar, so no Lavalink appdata mount is required.
 
 ### If You Need Help
 

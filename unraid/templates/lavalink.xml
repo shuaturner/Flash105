@@ -25,14 +25,7 @@
     <Mode>bridge</Mode>
     <Publish/>
   </Networking>
-  <Data>
-    <Volume>
-      <HostDir>/mnt/user/appdata/discord-music-bot/lavalink/plugins</HostDir>
-      <ContainerDir>/opt/Lavalink/plugins</ContainerDir>
-      <Mode>rw</Mode>
-    </Volume>
-  </Data>
+  <Data/>
   <Environment/>
   <Labels/>
-  <Config Name="Plugins Folder" Target="/opt/Lavalink/plugins" Default="/mnt/user/appdata/discord-music-bot/lavalink/plugins" Mode="rw" Description="Persistent folder for downloaded Lavalink plugins." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/discord-music-bot/lavalink/plugins</Config>
 </Container>
