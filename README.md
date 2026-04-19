@@ -12,6 +12,7 @@ It supports:
 ## Commands
 
 - `/play query:<song or url>`
+- `/sendgps query:<song or url>` (This is just for Andy)
 - `/skip`
 - `/pause`
 - `/resume`
