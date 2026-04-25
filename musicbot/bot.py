@@ -180,7 +180,13 @@ class MusicBot(discord.Client):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> None:
-        if member.bot or before.channel is None or before.channel == after.channel:
+        if member.bot:
+            return
+
+        if after.channel is not None and before.channel != after.channel:
+            await self.maybe_start_auto_join_track(member, after.channel)
+
+        if before.channel is None or before.channel == after.channel:
             return
 
         await asyncio.sleep(1)
@@ -198,6 +204,26 @@ class MusicBot(discord.Client):
             before.channel.id,
         )
         await self.cleanup_empty_voice_session(before.channel.guild)
+
+    async def maybe_start_auto_join_track(self, member: discord.Member, channel: discord.VoiceChannel) -> None:
+        auto_url = self.settings.auto_join_track_url
+        if not auto_url:
+            return
+
+        if self.settings.auto_join_user_id is not None and member.id != self.settings.auto_join_user_id:
+            return
+
+        if self.settings.auto_join_channel_id is not None and channel.id != self.settings.auto_join_channel_id:
+            return
+
+        guild = channel.guild
+        if guild.voice_client is not None:
+            return
+
+        try:
+            await self.start_auto_join_track(guild, channel, member, auto_url)
+        except Exception:
+            LOGGER.exception("Failed to start auto-join track in guild %s", guild.id)
 
     def track_playback_message(self, guild_id: int, message: discord.Message | discord.WebhookMessage) -> None:
         messages = self.playback_messages[guild_id]
@@ -232,6 +258,55 @@ class MusicBot(discord.Client):
                 LOGGER.exception("Failed to disconnect after empty-channel cleanup for guild %s", guild.id)
 
         await self.cleanup_playback_messages(guild.id)
+
+    async def start_auto_join_track(
+        self,
+        guild: discord.Guild,
+        channel: discord.VoiceChannel,
+        member: discord.Member,
+        track_url: str,
+    ) -> None:
+        if self.user is None:
+            return
+
+        lavalink_client = await wait_for_lavalink(self)
+        player = lavalink_client.player_manager.create(guild.id)
+
+        bot_member = guild.me
+        if bot_member is None:
+            raise RuntimeError("The bot is not visible in this server yet.")
+
+        permissions = channel.permissions_for(bot_member)
+        if not permissions.connect or not permissions.speak:
+            raise RuntimeError("The bot needs Connect and Speak permissions for the auto-join voice channel.")
+
+        voice_client = guild.voice_client
+        if voice_client is None:
+            voice_client = await channel.connect(cls=LavalinkVoiceClient, self_deaf=True)
+        elif voice_client.channel != channel:
+            await guild.change_voice_state(channel=channel, self_deaf=True)
+
+        if not isinstance(voice_client, LavalinkVoiceClient):
+            raise RuntimeError("The existing voice client is not Lavalink-managed.")
+
+        load_result = await search_tracks(self, track_url)
+        tracks = pick_tracks(load_result)
+        if not tracks:
+            raise RuntimeError("The auto-join track URL did not return any playable tracks.")
+
+        player.queue.clear()
+        await player.stop()
+
+        for track in tracks:
+            player.add(track, requester=member.id)
+
+        await player.play()
+        LOGGER.info(
+            "Auto-join playback started in guild %s for member %s using %s",
+            guild.id,
+            member.id,
+            track_url,
+        )
 
     async def close(self) -> None:
         if self.lavalink is not None:

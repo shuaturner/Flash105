@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
@@ -15,7 +16,25 @@ class Settings:
     lavalink_port: int
     lavalink_password: str
     lavalink_secured: bool
+    auto_join_track_url: str | None
+    auto_join_channel_id: int | None
+    auto_join_user_id: int | None
     log_level: str
+
+
+def parse_optional_discord_id(value: str) -> int | None:
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+
+    if cleaned.isdigit():
+        return int(cleaned)
+
+    match = re.search(r"(\d{15,})$", cleaned)
+    if match:
+        return int(match.group(1))
+
+    raise ValueError(f"Invalid Discord ID value: {cleaned}")
 
 
 def load_settings() -> Settings:
@@ -32,6 +51,9 @@ def load_settings() -> Settings:
     lavalink_port = int(os.getenv("LAVALINK_PORT", "2333").strip() or "2333")
     lavalink_password = os.getenv("LAVALINK_PASSWORD", "youshallnotpass").strip() or "youshallnotpass"
     lavalink_secured = os.getenv("LAVALINK_SECURED", "false").strip().lower() in {"1", "true", "yes", "on"}
+    auto_join_track_url = os.getenv("AUTO_JOIN_TRACK_URL", "").strip() or None
+    auto_join_channel_id = parse_optional_discord_id(os.getenv("AUTO_JOIN_CHANNEL_ID", ""))
+    auto_join_user_id = parse_optional_discord_id(os.getenv("AUTO_JOIN_USER_ID", ""))
 
     settings = Settings(
         discord_token=discord_token,
@@ -40,6 +62,9 @@ def load_settings() -> Settings:
         lavalink_port=lavalink_port,
         lavalink_password=lavalink_password,
         lavalink_secured=lavalink_secured,
+        auto_join_track_url=auto_join_track_url,
+        auto_join_channel_id=auto_join_channel_id,
+        auto_join_user_id=auto_join_user_id,
         log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
     )
 
