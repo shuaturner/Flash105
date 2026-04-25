@@ -10,3 +10,4 @@ venv/
 scratch/
 plugins/*.jar
 **/__pycache__/
+data/

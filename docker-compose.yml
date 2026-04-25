@@ -13,6 +13,8 @@ services:
     build: .
     env_file:
       - .env
+    volumes:
+      - ./data:/app/data
     depends_on:
       - lavalink
     restart: unless-stopped

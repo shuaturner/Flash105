@@ -11,6 +11,7 @@ from discord.ui import Button, View
 from lavalink.errors import ClientError
 
 from musicbot.config import Settings
+from musicbot.runtime_config import RuntimeConfig, RuntimeConfigStore
 
 LOGGER = logging.getLogger(__name__)
 
@@ -101,8 +102,13 @@ class MusicBot(discord.Client):
         self.lavalink: lavalink.Client | None = None
         self.node_ready = asyncio.Event()
         self.playback_messages: dict[int, list[discord.Message | discord.WebhookMessage]] = defaultdict(list)
+        self.runtime_config_store = RuntimeConfigStore(settings.runtime_config_path)
+        self.runtime_config = self.runtime_config_store.load()
         self.tree.add_command(play_command)
         self.tree.add_command(sendgps_command)
+        self.tree.add_command(jokejoin_command)
+        self.tree.add_command(jokechange_command)
+        self.tree.add_command(jokevictim_command)
         self.tree.add_command(skip_command)
         self.tree.add_command(pause_command)
         self.tree.add_command(resume_command)
@@ -206,11 +212,15 @@ class MusicBot(discord.Client):
         await self.cleanup_empty_voice_session(before.channel.guild)
 
     async def maybe_start_auto_join_track(self, member: discord.Member, channel: discord.VoiceChannel) -> None:
-        auto_url = self.settings.auto_join_track_url
+        auto_url = self.runtime_config.jokejoin_track_url or self.settings.auto_join_track_url
         if not auto_url:
             return
 
-        if self.settings.auto_join_user_id is not None and member.id != self.settings.auto_join_user_id:
+        if not self.runtime_config.jokejoin_enabled:
+            return
+
+        target_user_id = self.runtime_config.jokejoin_user_id or self.settings.auto_join_user_id
+        if target_user_id is not None and member.id != target_user_id:
             return
 
         if self.settings.auto_join_channel_id is not None and channel.id != self.settings.auto_join_channel_id:
@@ -224,6 +234,9 @@ class MusicBot(discord.Client):
             await self.start_auto_join_track(guild, channel, member, auto_url)
         except Exception:
             LOGGER.exception("Failed to start auto-join track in guild %s", guild.id)
+
+    def save_runtime_config(self) -> None:
+        self.runtime_config_store.save(self.runtime_config)
 
     def track_playback_message(self, guild_id: int, message: discord.Message | discord.WebhookMessage) -> None:
         messages = self.playback_messages[guild_id]
@@ -318,6 +331,20 @@ def guild_only() -> app_commands.Check:
     async def predicate(interaction: discord.Interaction) -> bool:
         if interaction.guild is None:
             raise app_commands.CheckFailure("This command can only be used in a server.")
+        return True
+
+    return app_commands.check(predicate)
+
+
+def manage_guild_only() -> app_commands.Check:
+    async def predicate(interaction: discord.Interaction) -> bool:
+        if interaction.guild is None:
+            raise app_commands.CheckFailure("This command can only be used in a server.")
+
+        permissions = interaction.user.guild_permissions
+        if not permissions.manage_guild:
+            raise app_commands.CheckFailure("You need Manage Server permission to use this command.")
+
         return True
 
     return app_commands.check(predicate)
@@ -644,6 +671,63 @@ async def sendgps_command(interaction: discord.Interaction, query: str) -> None:
     )
 
 
+@app_commands.command(name="jokejoin", description="Enable or disable the secret auto-join track.")
+@app_commands.describe(enabled="Turn the joke join on or off")
+@guild_only()
+@manage_guild_only()
+async def jokejoin_command(interaction: discord.Interaction, enabled: bool) -> None:
+    bot = interaction.client
+    if not isinstance(bot, MusicBot):
+        raise app_commands.AppCommandError("Bot client is not available.")
+
+    bot.runtime_config.jokejoin_enabled = enabled
+    bot.save_runtime_config()
+    status = "enabled" if enabled else "disabled"
+    await interaction.response.send_message(f"Joke join is now {status}.", ephemeral=True)
+
+
+@app_commands.command(name="jokechange", description="Change the secret auto-join YouTube link.")
+@app_commands.describe(url="A direct YouTube URL to use when joke join triggers")
+@guild_only()
+@manage_guild_only()
+async def jokechange_command(interaction: discord.Interaction, url: str) -> None:
+    bot = interaction.client
+    if not isinstance(bot, MusicBot):
+        raise app_commands.AppCommandError("Bot client is not available.")
+
+    bot.runtime_config.jokejoin_track_url = url.strip()
+    bot.runtime_config.jokejoin_enabled = True
+    bot.save_runtime_config()
+    await interaction.response.send_message("Joke join link updated and enabled.", ephemeral=True)
+
+
+@app_commands.command(name="jokevictim", description="Set or clear the secret auto-join target user.")
+@app_commands.describe(member="The person who should trigger the joke join", clear="Clear the current target")
+@guild_only()
+@manage_guild_only()
+async def jokevictim_command(
+    interaction: discord.Interaction,
+    member: discord.Member | None = None,
+    clear: bool = False,
+) -> None:
+    bot = interaction.client
+    if not isinstance(bot, MusicBot):
+        raise app_commands.AppCommandError("Bot client is not available.")
+
+    if clear:
+        bot.runtime_config.jokejoin_user_id = None
+        bot.save_runtime_config()
+        await interaction.response.send_message("Joke victim cleared.", ephemeral=True)
+        return
+
+    if member is None:
+        raise app_commands.AppCommandError("Pick a member, or set clear to true.")
+
+    bot.runtime_config.jokejoin_user_id = member.id
+    bot.save_runtime_config()
+    await interaction.response.send_message(f"Joke victim set to {member.display_name}.", ephemeral=True)
+
+
 @app_commands.command(name="skip", description="Skip the currently playing track.")
 @guild_only()
 async def skip_command(interaction: discord.Interaction) -> None:
@@ -798,6 +882,9 @@ async def now_playing_command(interaction: discord.Interaction) -> None:
 
 @play_command.error
 @sendgps_command.error
+@jokejoin_command.error
+@jokechange_command.error
+@jokevictim_command.error
 @skip_command.error
 @pause_command.error
 @resume_command.error

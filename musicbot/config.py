@@ -19,6 +19,7 @@ class Settings:
     auto_join_track_url: str | None
     auto_join_channel_id: int | None
     auto_join_user_id: int | None
+    runtime_config_path: str
     log_level: str
 
 
@@ -65,6 +66,8 @@ def load_settings() -> Settings:
         auto_join_track_url=auto_join_track_url,
         auto_join_channel_id=auto_join_channel_id,
         auto_join_user_id=auto_join_user_id,
+        runtime_config_path=os.getenv("RUNTIME_CONFIG_PATH", "/app/data/runtime-config.json").strip()
+        or "/app/data/runtime-config.json",
         log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
     )
 
